@@ -1,0 +1,9 @@
+header:
+  version: 10    
+    
+local_conf_header:
+  uboot: |
+    # we specify the boot partition size explicitly - do not know why...
+    MENDER_BOOT_PART_SIZE_MB = "50"
+    MENDER_FEATURES_ENABLE_append = " mender-image mender-image-sd mender-client-install mender-uboot mender-systemd mender-growfs-data"
+    MENDER_FEATURES_DISABLE_append = " mender-grub mender-image-uefi"
