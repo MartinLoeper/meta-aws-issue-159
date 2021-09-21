@@ -1,0 +1,31 @@
+machine: raspberrypi4
+header:
+  version: 10
+  includes:
+    - base.yml
+    - uboot.yml
+
+repos:
+
+  # mender board support for raspberry pi 4b
+  meta-mender:
+    url: https://github.com/mendersoftware/meta-mender.git
+    refspec: 095ba535fe4f00afa74e6b7db2907a6a8a127fa8
+    layers:
+      meta-mender-raspberrypi:
+
+  # bsp layer for raspberry pi 4b SoC
+  meta-raspi:
+    url: "https://github.com/agherzan/meta-raspberrypi"
+    refspec: f0c75016f06c0395d1e76fde0ef1beb71eaf404a
+
+# TODO: check if anything is missing from the following commit: https://gitlab.com/nesto-software/pos-adapter-v2/pos-adapter-yocto-image/-/blob/88f0e7e8077140ca04a9a76314dce7db2e379e75/kas-project.yml
+local_conf_header:
+  extended: |
+    SRC_URI_remove_mender-image = " file://0001-Do-not-use-metadata_csum-feature-on-ext4-by-default.patch"
+    ENABLE_UART = "1" 
+    DISABLE_SPLASH = "1"
+    DISABLE_RPI_BOOT_LOGO = "1"
+    GPU_FREQ = "250"
+    GPU_MEM = "16"
+    RPI_USE_U_BOOT = "1"
