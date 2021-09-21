@@ -1,0 +1,89 @@
+distro: poky
+target: core-image-full-cmdline
+header:
+  version: 10
+
+repos:
+ 
+  # aws tools such as greengrass
+  meta-aws:
+    url: https://github.com/aws/meta-aws.git
+    refspec: dunfell
+
+  # mender layer which supports atomic rootfs and kernel OTA updates
+  meta-mender:
+    url: https://github.com/mendersoftware/meta-mender.git
+    refspec: 095ba535fe4f00afa74e6b7db2907a6a8a127fa8
+    layers:
+      meta-mender-core:
+
+  # additional shared OE metadata, python and networking
+  meta-oe:
+    url: "http://git.openembedded.org/meta-openembedded"
+    refspec: 7bd47ef6c98323c95a9e527129dca98c9a65ee08
+    layers:
+      meta-oe:
+      meta-python:
+      meta-networking:
+      meta-webserver:
+  
+  # standard yocto layers such as openembedded-core, poky, etc.
+  poky:
+    url: "https://git.yoctoproject.org/git/poky"
+    refspec: 10763296f84b8b1292d1dbaaac8e682592388d1b
+    layers:
+      meta:
+      meta-poky:
+      meta-yocto-bsp:
+
+local_conf_header:
+  base: |
+    CONF_VERSION = "1"
+
+    # set the correct output and package format
+    PACKAGE_CLASSES = "package_rpm"
+
+    # replace sysvinit with systemd and enable package management
+    DISTRO_FEATURES += "systemd package-management"
+    VIRTUAL-RUNTIME_init_manager = "systemd"
+    VIRTUAL-RUNTIME_initscripts = "systemd-compat-units"
+    VIRTUAL-RUNTIME_syslog = ""
+    VIRTUAL-RUNTIME_login_manager = "shadow-base"
+    DISTRO_FEATURES_BACKFILL_CONSIDERED = "sysvinit"
+
+    # replace busybox with coreutils
+    PREFERRED_PROVIDER_virtual/base-utils = "coreutils"
+    VIRTUAL-RUNTIME_base-utils = "coreutils"
+    VIRTUAL-RUNTIME_base-utils-hwclock = "util-linux-hwclock"
+    VIRTUAL-RUNTIME_base-utils-syslog = ""
+
+    # rpi-base.inc removes these as they are normally installed on to the
+    # vfat boot partition. To be able to update the Linux kernel Mender
+    # uses an image that resides on the root file system and below line
+    # ensures that they are installed to /boot
+    IMAGE_INSTALL_append = " kernel-image kernel-devicetree"
+
+    # Mender will build an image called `sdimg` which shall be used instead
+    # of the `rpi-sdimg` and all the others.
+    IMAGE_FSTYPES_remove += " rpi-sdimg tar.bz2 ext3 ext4 wic.bz2 wic.bmap"
+
+    # Use the same type here as specified in ARTIFACTIMG_FSTYPE to avoid
+    # building an unneeded image file.
+    SDIMG_ROOTFS_TYPE = "ext4"
+    ARTIFACTIMG_FSTYPE = "ext4"
+
+    # provide a mender artifact name for the initial rootfs image (used for provisioning)
+    MENDER_ARTIFACT_NAME = "initial-release-v2"
+
+    # we do not need the splash systemd unit and it always fails
+    IMAGE_FEATURES_remove = "splash"
+
+    # create a partition size of ~ 1.5 GB each for rootfs
+    IMAGE_ROOTFS_SIZE = "1000000"
+    MENDER_STORAGE_TOTAL_SIZE_MB = "3072"
+
+    # TODO: remove debug-tweaks for production release
+    # please note: "read-only-rootfs" is not possible when using devtool and its deploy-target action
+    EXTRA_IMAGE_FEATURES += "debug-tweaks"
+
+    IMAGE_INSTALL_append = " greengrass-bin awscli strace nodejs nginx networkmanager devtool-customization dbus"
